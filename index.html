@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -314,6 +314,374 @@ LTV:CAC: ${$('#ratio').textContent}`;
   });
 
   // initial
+  render(compute(inputs));
+  syncPills();
+})();
+</script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CAC & LTV — FinnixPro (Inline‑Editable + Forecast)</title>
+<style>
+  :root{
+    --teal-900:#0d6b66; --teal-800:#0f8f87; --teal-700:#19a7a0; --teal-600:#1db6ad; --teal-400:#46cec6;
+    --gray-900:#0b1f2a; --gray-700:#374151; --gray-600:#4b5563; --gray-500:#6b7280;
+    --bg:#fff; --card:#f8fafc; --ring:#e5e7eb; --shadow:0 10px 30px rgba(12,37,63,.08); --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--gray-700);line-height:1.45;padding:40px}
+  .wrap{max-width:1100px;margin:0 auto}
+  .title{font-size:36px;font-weight:800;color:var(--teal-900);margin-bottom:6px;letter-spacing:.2px}
+  .subtitle{font-size:16px;color:var(--gray-500);margin-bottom:18px}
+
+  /* Editable input pills */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px;align-items:center}
+  .pill{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--ring);
+    border-radius:999px;padding:8px 12px;box-shadow:var(--shadow);font-weight:700}
+  .pill .lbl{color:var(--gray-600);font-weight:700}
+  .pill .val{min-width:48px;outline:none;border:none;border-bottom:1px dashed transparent}
+  .pill .val[contenteditable="true"]:focus{border-bottom:1px dashed var(--teal-600)}
+  .btn{background:var(--teal-900);color:#fff;border:none;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}
+  .btn.secondary{background:#fff;color:var(--teal-900);border:1px solid var(--teal-900)}
+
+  /* Output card */
+  .card{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;background:var(--card);border:1px solid var(--ring);
+    border-radius:var(--radius);padding:28px;box-shadow:var(--shadow)}
+  .legend{display:grid;gap:18px;align-content:start;padding-left:8px}
+  .legend-item{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:14px}
+  .swatch{width:18px;height:18px;border-radius:4px;border:1px solid rgba(0,0,0,.06)}
+  .pct{min-width:110px;text-align:center;padding:6px 10px;border-radius:10px;background:#fff;border:1px solid var(--ring);font-weight:700;color:var(--gray-700)}
+  .label{font-weight:800;color:var(--gray-900)}
+  .muted{color:var(--gray-500);font-weight:600}
+  .value{font-weight:800;color:var(--teal-900)}
+  .donut-wrap{display:grid;place-items:center;position:relative}
+  .donut{width:430px;height:430px;border-radius:50%;box-shadow:inset 0 0 0 56px #fff,var(--shadow);position:relative}
+  .center{position:absolute;width:230px;height:230px;background:#fff;border-radius:50%;display:grid;place-items:center;text-align:center;box-shadow:inset 0 0 0 1px var(--ring)}
+  .center h2{margin:0;font-size:42px;color:var(--teal-900);font-weight:900}
+  .center p{margin:6px 0 0;color:var(--gray-500);font-weight:700}
+  .note{margin-top:20px;font-size:13px;color:var(--gray-500)}
+
+  /* Dropdown cards (assumptions & forecast) */
+  details{background:var(--card);border:1px solid var(--ring);border-radius:12px;padding:16px 18px;margin-top:22px;box-shadow:var(--shadow)}
+  details summary{cursor:pointer;font-weight:700;color:var(--teal-900);outline:none}
+  details[open] summary{margin-bottom:8px}
+
+  /* Forecast table styles (harmonized with your current table) */
+  .forecast h2{margin:6px 0 12px;color:var(--teal-900);font-size:18px}
+  .forecast table{width:100%;border-collapse:collapse;font-size:14px}
+  .forecast th,.forecast td{border:1px solid #d8dee6;padding:10px;text-align:center}
+  .forecast thead th{background:var(--teal-800);color:#fff}
+  .forecast td.section{text-align:left;background:#f2f6f8;font-weight:800}
+  .forecast tr.total td{background:#e8faf8;font-weight:800}
+  .forecast .footer-note{margin-top:12px;font-size:13px;color:var(--gray-600)}
+  .forecast .highlight{color:var(--teal-800);font-weight:800}
+
+  @media (max-width:900px){.card{grid-template-columns:1fr}.donut{width:320px;height:320px}.center{width:180px;height:180px}.center h2{font-size:34px}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">CAC &amp; LTV Model (Inline‑Editable)</div>
+    <div class="subtitle">Click the pills to edit inputs. Outputs update live. Use the dropdowns below for assumptions and the financial forecast.</div>
+
+    <!-- Editable INPUTS -->
+    <div class="toolbar">
+      <div class="pill"><span class="lbl">Starter Users</span><span class="val" contenteditable="true" data-key="starterUsers">200</span></div>
+      <div class="pill"><span class="lbl">Starter $/mo</span><span class="val" contenteditable="true" data-key="starterPrice">$10</span></div>
+
+      <div class="pill"><span class="lbl">Pro Users</span><span class="val" contenteditable="true" data-key="proUsers">250</span></div>
+      <div class="pill"><span class="lbl">Pro $/mo</span><span class="val" contenteditable="true" data-key="proPrice">$29</span></div>
+
+      <div class="pill"><span class="lbl">Premium Users</span><span class="val" contenteditable="true" data-key="premiumUsers">300</span></div>
+      <div class="pill"><span class="lbl">Premium $/mo</span><span class="val" contenteditable="true" data-key="premiumPrice">$49</span></div>
+      <div class="pill"><span class="lbl">Seats/User</span><span class="val" contenteditable="true" data-key="premiumSeats">3</span></div>
+
+      <div class="pill"><span class="lbl">Enterprise Users</span><span class="val" contenteditable="true" data-key="enterpriseUsers">200</span></div>
+      <div class="pill"><span class="lbl">Enterprise $/mo</span><span class="val" contenteditable="true" data-key="enterprisePrice">$500</span></div>
+
+      <div class="pill"><span class="lbl">Gross Margin</span><span class="val" contenteditable="true" data-key="grossMargin">80%</span></div>
+      <div class="pill"><span class="lbl">Annual Churn</span><span class="val" contenteditable="true" data-key="annualChurn">10%</span></div>
+      <div class="pill"><span class="lbl">S&amp;M Spend (Year 1)</span><span class="val" contenteditable="true" data-key="smSpend">$100,000</span></div>
+
+      <button id="resetBtn" class="btn">Reset</button>
+      <button id="copyBtn" class="btn secondary">Copy Outputs</button>
+    </div>
+
+    <!-- OUTPUT CARD -->
+    <section class="card">
+      <div class="legend">
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-700)"></div>
+          <div class="label">Lifetime Value (LTV) <span class="muted">(gross profit / customer)</span></div>
+          <div class="pct"><span id="ltv" class="value">$—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-400)"></div>
+          <div class="label">Customer Acquisition Cost (CAC)</div>
+          <div class="pct"><span id="cac" class="value">$—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-900)"></div>
+          <div class="label">LTV : CAC Ratio</div>
+          <div class="pct"><span id="ratio" class="value">—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-600)"></div>
+          <div class="label">ARPU (monthly)</div>
+          <div class="pct"><span id="arpu" class="value">$—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-600)"></div>
+          <div class="label">Total MRR (Year 1 model)</div>
+          <div class="pct"><span id="mrr" class="value">$—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-600)"></div>
+          <div class="label">Gross Margin</div>
+          <div class="pct"><span id="gm" class="value">—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-600)"></div>
+          <div class="label">Annual Churn</div>
+          <div class="pct"><span id="annualChurnOut" class="value">—</span></div>
+        </div>
+      </div>
+
+      <div class="donut-wrap">
+        <div id="donut" class="donut"></div>
+        <div class="center">
+          <div>
+            <h2 id="centerRatio">—</h2>
+            <p>LTV : CAC</p>
+          </div>
+        </div>
+        <div id="note" class="note"></div>
+      </div>
+    </section>
+
+    <!-- DROPDOWN: Assumptions & Formulas -->
+    <details>
+      <summary>Assumptions &amp; Formulas</summary>
+      <p id="assumptions1"></p>
+      <p id="assumptions2"></p>
+      <p id="assumptions3"></p>
+      <p id="assumptions4"></p>
+      <p id="assumptions5"></p>
+      <p><strong>LTV:CAC:</strong> LTV ÷ CAC. SaaS benchmark is ~3:1.</p>
+    </details>
+
+    <!-- NEW DROPDOWN: Financial Forecast -->
+    <details id="forecast" class="forecast">
+      <summary>Financial Forecast (2025–2027)</summary>
+      <h2>FinnixPro Financial Forecast (2025–2027)</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Year</th>
+            <th>Users</th>
+            <th>Free</th>
+            <th>Starter</th>
+            <th>Pro</th>
+            <th>Premium</th>
+            <th>Enterprise</th>
+            <th>Monthly Rev</th>
+            <th>Annual Rev</th>
+            <th>Burn</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="section">2025</td>
+            <td>1,000</td>
+            <td>200</td>
+            <td>250</td>
+            <td>300</td>
+            <td>200</td>
+            <td>50</td>
+            <td>$64K</td>
+            <td>$774K</td>
+            <td>$300K</td>
+          </tr>
+          <tr>
+            <td class="section">2026</td>
+            <td>5,000</td>
+            <td>500</td>
+            <td>1,000</td>
+            <td>1,500</td>
+            <td>1,200</td>
+            <td>500</td>
+            <td>$457K</td>
+            <td>$5.5M</td>
+            <td>$600K</td>
+          </tr>
+          <tr class="total">
+            <td class="section">2027</td>
+            <td>12,000</td>
+            <td>600</td>
+            <td>2,500</td>
+            <td>3,000</td>
+            <td>3,000</td>
+            <td>2,400</td>
+            <td>$1.49M</td>
+            <td>$17.9M</td>
+            <td>$900K</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="footer-note">
+        Revenue assumptions based on blended pricing tiers:
+        <span class="highlight">Starter ($10/seat)</span>,
+        <span class="highlight">Pro ($29/seat)</span>,
+        <span class="highlight">Premium ($49/seat)</span>,
+        and <span class="highlight">Enterprise (~$500 avg)</span>.
+        Paid conversion improves from ~50% to ~70% over time.
+        Premium assumes 3 seats per user. Enterprise accounts contribute 60%+ of ARR by 2027.
+      </p>
+    </details>
+  </div>
+
+<script>
+(function(){
+  // ---------- Helpers ----------
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const fmtUSD  = v => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(v);
+  const fmtUSD0 = v => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);
+  const pct     = v => (v*100).toFixed(0) + '%';
+  const pct3    = v => (v*100).toFixed(3) + '%';
+
+  function parseNum(s, {isPercent=false}={}){
+    if (typeof s !== 'string') s = String(s ?? '');
+    s = s.replace(/,/g,'').trim();
+    const hasPct = s.endsWith('%');
+    if (hasPct) s = s.slice(0,-1).trim();
+    if (s.startsWith('$')) s = s.slice(1).trim();
+    let v = parseFloat(s);
+    if (Number.isNaN(v)) return 0;
+    if (isPercent || hasPct) v = v/100;
+    return v;
+  }
+
+  const defaults = {
+    starterUsers:200, starterPrice:10,
+    proUsers:250, proPrice:29,
+    premiumUsers:300, premiumPrice:49, premiumSeats:3,
+    enterpriseUsers:200, enterprisePrice:500,
+    grossMargin:0.80, annualChurn:0.10, smSpend:100000
+  };
+  let inputs = {...defaults};
+
+  function compute(i){
+    const starterMRR    = i.starterUsers    * i.starterPrice;
+    const proMRR        = i.proUsers        * i.proPrice;
+    const premiumMRR    = i.premiumUsers    * i.premiumPrice * i.premiumSeats;
+    const enterpriseMRR = i.enterpriseUsers * i.enterprisePrice;
+    const totalMRR      = starterMRR + proMRR + premiumMRR + enterpriseMRR;
+
+    const paidUsers     = i.starterUsers + i.proUsers + i.premiumUsers + i.enterpriseUsers;
+    const arpu          = totalMRR / (paidUsers || 1);
+    const monthlyChurn  = i.annualChurn / 12;
+    const ltv           = (arpu * i.grossMargin) / (monthlyChurn || 1e-9);
+    const cac           = i.smSpend / (paidUsers || 1);
+    const ratio         = ltv / (cac || 1e-9);
+
+    const totalValue    = ltv + cac;
+    const cacShare      = (totalValue ? cac / totalValue : 0);
+    const ltvDeg        = 360 * (1 - cacShare); // CAC slice at end
+    return { starterMRR, proMRR, premiumMRR, enterpriseMRR, totalMRR, paidUsers, arpu, monthlyChurn, ltv, cac, ratio, cacShare, ltvDeg, i };
+  }
+
+  function render(model){
+    const { arpu, totalMRR, ltv, cac, ratio, cacShare, ltvDeg, monthlyChurn, i } = model;
+    $('#ltv').textContent   = fmtUSD0(ltv);
+    $('#cac').textContent   = fmtUSD(cac);
+    $('#ratio').textContent = ratio.toFixed(1)+':1';
+    $('#arpu').textContent  = fmtUSD(arpu);
+    $('#mrr').textContent   = fmtUSD0(totalMRR);
+    $('#gm').textContent    = pct(i.grossMargin);
+    $('#annualChurnOut').textContent = pct(i.annualChurn);
+
+    $('#centerRatio').textContent = ratio.toFixed(0)+':1';
+    $('#note').textContent = `Split shows LTV vs CAC share of total value (CAC ${(cacShare*100).toFixed(1)}%).`;
+    $('#donut').style.background =
+      `conic-gradient(var(--teal-700) 0 ${ltvDeg.toFixed(2)}deg, var(--teal-400) ${ltvDeg.toFixed(2)}deg 360deg)`;
+
+    // Assumptions text
+    $('#assumptions1').innerHTML =
+      `<strong>Users & pricing:</strong> Starter ${i.starterUsers}×$${i.starterPrice}/mo; Pro ${i.proUsers}×$${i.proPrice}/mo; Premium ${i.premiumUsers}×$${i.premiumPrice}/mo × ${i.premiumSeats} seats; Enterprise ${i.enterpriseUsers}×$${i.enterprisePrice}/mo.`;
+    $('#assumptions2').innerHTML =
+      `<strong>Total MRR:</strong> Starter ${fmtUSD0(model.starterMRR)} + Pro ${fmtUSD0(model.proMRR)} + Premium ${fmtUSD0(model.premiumMRR)} + Enterprise ${fmtUSD0(model.enterpriseMRR)} = <strong>${fmtUSD0(totalMRR)}</strong>.`;
+    $('#assumptions3').innerHTML =
+      `<strong>ARPU:</strong> Total MRR ÷ Paid Users (${model.paidUsers}) = <strong>${fmtUSD(arpu)}</strong>/mo.`;
+    $('#assumptions4').innerHTML =
+      `<strong>Gross Margin:</strong> ${pct(i.grossMargin)}. <strong>Churn:</strong> ${pct(i.annualChurn)} annually → ${pct3(monthlyChurn)} monthly.`;
+    $('#assumptions5').innerHTML =
+      `<strong>LTV:</strong> (ARPU × GM) ÷ Monthly Churn = (${fmtUSD(arpu)} × ${pct(i.grossMargin)}) ÷ ${pct3(monthlyChurn)} = <strong>${fmtUSD0(ltv)}</strong>. ` +
+      `<strong>CAC:</strong> S&amp;M Spend ${fmtUSD0(i.smSpend)} ÷ New Customers (${model.paidUsers}) = <strong>${fmtUSD(cac)}</strong>.`;
+  }
+
+  function parseInputs(){
+    const map = {};
+    $$('.val[contenteditable][data-key]').forEach(el=>{
+      const key = el.dataset.key;
+      const isPct = (key==='grossMargin' || key==='annualChurn');
+      map[key] = parseNum(el.textContent, {isPercent:isPct});
+    });
+    return map;
+  }
+  function recalc(){
+    Object.assign(inputs, parseInputs());
+    render(compute(inputs));
+  }
+  function syncPills(){
+    const f = {
+      currency: v => fmtUSD(v).replace('.00',''),
+      num: v => String(v),
+      percent: v => (v*100).toFixed(0)+'%'
+    };
+    const view = {
+      starterUsers: v=>f.num(v), starterPrice: v=>f.currency(v),
+      proUsers: v=>f.num(v), proPrice: v=>f.currency(v),
+      premiumUsers: v=>f.num(v), premiumPrice: v=>f.currency(v), premiumSeats: v=>f.num(v),
+      enterpriseUsers: v=>f.num(v), enterprisePrice: v=>f.currency(v),
+      grossMargin: v=>f.percent(v), annualChurn: v=>f.percent(v), smSpend: v=>f.currency(v)
+    };
+    $$('.val[contenteditable][data-key]').forEach(el=>{
+      const k = el.dataset.key;
+      el.textContent = view[k](inputs[k]);
+    });
+  }
+
+  // Listeners
+  $$('.val[contenteditable][data-key]').forEach(el=>{
+    let t=null;
+    el.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(recalc, 120); });
+    el.addEventListener('blur', ()=>{ recalc(); syncPills(); });
+  });
+  $('#resetBtn').addEventListener('click', ()=>{ inputs={...defaults}; syncPills(); render(compute(inputs)); });
+  $('#copyBtn').addEventListener('click', async ()=>{
+    const text =
+`FinnixPro — CAC & LTV (Current View)
+ARPU: ${$('#arpu').textContent}
+MRR: ${$('#mrr').textContent}
+Gross Margin: ${$('#gm').textContent}
+Annual Churn: ${$('#annualChurnOut').textContent}
+LTV: ${$('#ltv').textContent}
+CAC: ${$('#cac').textContent}
+LTV:CAC: ${$('#ratio').textContent}`;
+    try{ await navigator.clipboard.writeText(text);
+      const old = $('#copyBtn').textContent; $('#copyBtn').textContent='Copied!'; setTimeout(()=>$('#copyBtn').textContent=old,1200);
+    }catch(e){ alert('Copied summary:\n\n'+text); }
+  });
+
+  // Initial paint
   render(compute(inputs));
   syncPills();
 })();
