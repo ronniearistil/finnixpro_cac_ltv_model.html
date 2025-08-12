@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CAC & LTV — FinnixPro (Dynamic)</title>
+<style>
+  :root{
+    --teal-900:#0d6b66; --teal-800:#0f8f87; --teal-700:#19a7a0; --teal-600:#1db6ad; --teal-400:#46cec6;
+    --gray-800:#0b1f2a; --gray-700:#374151; --gray-600:#4b5563; --gray-500:#6b7280;
+    --bg:#fff; --card:#f8fafc; --ring:#e5e7eb; --shadow:0 10px 30px rgba(12,37,63,.08); --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--gray-700);line-height:1.45;padding:40px}
+  .wrap{max-width:1100px;margin:0 auto}
+  .title{font-size:36px;font-weight:800;color:var(--teal-900);margin-bottom:6px;letter-spacing:.2px}
+  .subtitle{font-size:16px;color:var(--gray-500);margin-bottom:28px}
+  .card{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;background:var(--card);border:1px solid var(--ring);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow)}
+  .legend{display:grid;gap:18px;align-content:start;padding-left:8px}
+  .legend-item{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:14px}
+  .swatch{width:18px;height:18px;border-radius:4px;border:1px solid rgba(0,0,0,.06)}
+  .pct{min-width:92px;text-align:center;padding:6px 10px;border-radius:10px;background:#fff;border:1px solid var(--ring);font-weight:700;color:var(--gray-700)}
+  .label{font-weight:700;color:var(--gray-800)}
+  .muted{color:var(--gray-500);font-weight:600}
+  .value{font-weight:800;color:var(--teal-900)}
+  .donut-wrap{display:grid;place-items:center;position:relative}
+  .donut{width:430px;height:430px;border-radius:50%;box-shadow:inset 0 0 0 56px #fff,var(--shadow);position:relative}
+  .center{position:absolute;width:230px;height:230px;background:#fff;border-radius:50%;display:grid;place-items:center;text-align:center;box-shadow:inset 0 0 0 1px var(--ring)}
+  .center h2{margin:0;font-size:42px;color:var(--teal-900);font-weight:900}
+  .center p{margin:6px 0 0;color:var(--gray-500);font-weight:700}
+  .note{margin-top:20px;font-size:13px;color:var(--gray-500)}
+  details{background:var(--card);border:1px solid var(--ring);border-radius:12px;padding:16px 18px;margin-top:22px;box-shadow:var(--shadow)}
+  details summary{cursor:pointer;font-weight:700;color:var(--teal-900)}
+  details p{margin:10px 0 0}
+  @media (max-width:900px){.card{grid-template-columns:1fr}.donut{width:320px;height:320px}.center{width:180px;height:180px}.center h2{font-size:34px}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">CAC &amp; LTV Model (Investor View)</div>
+    <div class="subtitle">Weighted by Year‑1 paid user mix; standard SaaS margin & churn. Update via <code>updateCACModel()</code>.</div>
+
+    <section class="card">
+      <div class="legend">
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-700)"></div>
+          <div class="label">Lifetime Value (LTV) <span class="muted">(gross profit / customer)</span></div>
+          <div class="pct"><span id="ltv" class="value">$—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-400)"></div>
+          <div class="label">Customer Acquisition Cost (CAC)</div>
+          <div class="pct"><span id="cac" class="value">$—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-900)"></div>
+          <div class="label">LTV : CAC Ratio</div>
+          <div class="pct"><span id="ratio" class="value">—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-600)"></div>
+          <div class="label">ARPU (monthly)</div>
+          <div class="pct"><span id="arpu" class="value">$—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-600)"></div>
+          <div class="label">Total MRR (Year 1 model)</div>
+          <div class="pct"><span id="mrr" class="value">$—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-600)"></div>
+          <div class="label">Gross Margin</div>
+          <div class="pct"><span id="gm" class="value">—</span></div>
+        </div>
+        <div class="legend-item">
+          <div class="swatch" style="background: var(--teal-600)"></div>
+          <div class="label">Annual Churn</div>
+          <div class="pct"><span id="annualChurn" class="value">—</span></div>
+        </div>
+      </div>
+
+      <div class="donut-wrap">
+        <div id="donut" class="donut"></div>
+        <div class="center">
+          <div>
+            <h2 id="centerRatio">—</h2>
+            <p>LTV : CAC</p>
+          </div>
+        </div>
+        <div id="note" class="note"></div>
+      </div>
+    </section>
+
+    <details>
+      <summary>Assumptions & Formulas</summary>
+      <p id="assumptions1"></p>
+      <p id="assumptions2"></p>
+      <p id="assumptions3"></p>
+      <p id="assumptions4"></p>
+      <p id="assumptions5"></p>
+      <p><strong>LTV:CAC:</strong> LTV ÷ CAC. SaaS benchmark is ~3:1.</p>
+    </details>
+  </div>
+
+<script>
+(function(){
+  // ---- Helpers ----
+  const fmtUSD  = v => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(v);
+  const fmtUSD0 = v => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v);
+  const pct     = v => (v*100).toFixed(0) + '%';
+  const pct3    = v => (v*100).toFixed(3) + '%';
+
+  function compute(inputs){
+    const {
+      starterUsers, starterPrice,
+      proUsers, proPrice,
+      premiumUsers, premiumPrice, premiumSeats,
+      enterpriseUsers, enterprisePrice,
+      grossMargin, annualChurn, smSpend
+    } = inputs;
+
+    const starterMRR    = starterUsers    * starterPrice;
+    const proMRR        = proUsers        * proPrice;
+    const premiumMRR    = premiumUsers    * premiumPrice * premiumSeats;
+    const enterpriseMRR = enterpriseUsers * enterprisePrice;
+    const totalMRR      = starterMRR + proMRR + premiumMRR + enterpriseMRR;
+
+    const paidUsers     = starterUsers + proUsers + premiumUsers + enterpriseUsers;
+    const arpu          = totalMRR / (paidUsers || 1);
+    const monthlyChurn  = annualChurn / 12;
+    const ltv           = (arpu * grossMargin) / (monthlyChurn || 1e-9);
+    const cac           = smSpend / (paidUsers || 1);
+    const ratio         = ltv / (cac || 1e-9);
+
+    // donut split (LTV vs CAC share of total)
+    const totalValue    = ltv + cac;
+    const cacShare      = (totalValue ? cac / totalValue : 0);
+    const ltvDeg        = 360 * (1 - cacShare); // CAC slice at the end
+    return {
+      starterMRR, proMRR, premiumMRR, enterpriseMRR, totalMRR,
+      paidUsers, arpu, monthlyChurn, ltv, cac, ratio, cacShare, ltvDeg,
+      inputs
+    };
+  }
+
+  function render(model){
+    const { arpu, totalMRR, ltv, cac, ratio, cacShare, ltvDeg, monthlyChurn, inputs } = model;
+
+    document.getElementById('ltv').textContent  = fmtUSD0(ltv);
+    document.getElementById('cac').textContent  = fmtUSD(cac);
+    document.getElementById('ratio').textContent= ratio.toFixed(1)+':1';
+    document.getElementById('arpu').textContent = fmtUSD(arpu);
+    document.getElementById('mrr').textContent  = fmtUSD0(totalMRR);
+    document.getElementById('gm').textContent   = pct(inputs.grossMargin);
+    document.getElementById('annualChurn').textContent = pct(inputs.annualChurn);
+
+    document.getElementById('centerRatio').textContent = ratio.toFixed(0)+':1';
+    document.getElementById('note').textContent = `Split shows LTV vs CAC share of total value (CAC ${(cacShare*100).toFixed(1)}%).`;
+
+    document.getElementById('donut').style.background =
+      `conic-gradient(var(--teal-700) 0 ${ltvDeg.toFixed(2)}deg, var(--teal-400) ${ltvDeg.toFixed(2)}deg 360deg)`;
+
+    // Assumptions text
+    const i = inputs;
+    document.getElementById('assumptions1').innerHTML =
+      `<strong>Users & pricing:</strong> Starter ${i.starterUsers}×$${i.starterPrice}/mo; Pro ${i.proUsers}×$${i.proPrice}/mo; Premium ${i.premiumUsers}×$${i.premiumPrice}/mo × ${i.premiumSeats} seats; Enterprise ${i.enterpriseUsers}×$${i.enterprisePrice}/mo.`;
+    document.getElementById('assumptions2').innerHTML =
+      `<strong>Total MRR:</strong> Starter ${fmtUSD0(i.starterUsers*i.starterPrice)} + Pro ${fmtUSD0(i.proUsers*i.proPrice)} + Premium ${fmtUSD0(i.premiumUsers*i.premiumPrice*i.premiumSeats)} + Enterprise ${fmtUSD0(i.enterpriseUsers*i.enterprisePrice)} = <strong>${fmtUSD0(totalMRR)}</strong>.`;
+    document.getElementById('assumptions3').innerHTML =
+      `<strong>ARPU:</strong> Total MRR ÷ Paid Users (${model.paidUsers}) = <strong>${fmtUSD(arpu)}</strong>/mo.`;
+    document.getElementById('assumptions4').innerHTML =
+      `<strong>Gross Margin:</strong> ${pct(i.grossMargin)}. <strong>Churn:</strong> ${pct(i.annualChurn)} annually → ${pct3(monthlyChurn)} monthly.`;
+    document.getElementById('assumptions5').innerHTML =
+      `<strong>LTV:</strong> (ARPU × GM) ÷ Monthly Churn = (${fmtUSD(arpu)} × ${pct(i.grossMargin)}) ÷ ${pct3(monthlyChurn)} = <strong>${fmtUSD0(ltv)}</strong>. ` +
+      `<strong>CAC:</strong> S&amp;M Spend ${fmtUSD0(i.smSpend)} ÷ New Customers (${model.paidUsers}) = <strong>${fmtUSD(cac)}</strong>.`;
+  }
+
+  // ---- Public API ----
+  const defaults = {
+    starterUsers:200, starterPrice:10,
+    proUsers:250, proPrice:29,
+    premiumUsers:300, premiumPrice:49, premiumSeats:3,
+    enterpriseUsers:200, enterprisePrice:500,
+    grossMargin:0.80,   // 80%
+    annualChurn:0.10,   // 10%
+    smSpend:100000      // $100K
+  };
+
+  function updateCACModel(overrides={}){
+    const inputs = Object.assign({}, defaults, overrides);
+    render(compute(inputs));
+  }
+  window.updateCACModel = updateCACModel;
+
+  // initial render
+  updateCACModel();
+
+  // Example: uncomment to test different assumptions live
+  // setTimeout(()=>updateCACModel({ annualChurn:0.18, smSpend:250000 }), 2000);
+})();
+</script>
+</body>
+</html>
+
