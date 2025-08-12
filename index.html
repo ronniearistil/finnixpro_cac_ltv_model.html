@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -319,6 +319,187 @@ LTV:CAC: ${$('#ratio').textContent}`;
 })();
 </script>
 </body>
-</html>
+</html> -->
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FinnixPro — Forecast & Unit Economics</title>
+<style>
+  :root{
+    --teal-900:#0d6b66; --teal-800:#0f8f87; --teal-700:#19a7a0; --teal-600:#1db6ad; --teal-400:#46cec6;
+    --gray-900:#0b1f2a; --gray-700:#374151; --gray-600:#4b5563; --gray-500:#6b7280;
+    --bg:#fff; --card:#f8fafc; --ring:#e5e7eb; --shadow:0 10px 30px rgba(12,37,63,.08); --radius:16px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--gray-700);line-height:1.45;padding:36px}
+  .wrap{max-width:1200px;margin:0 auto}
+
+  .title{font-size:28px;font-weight:900;color:var(--teal-900);margin:0 0 6px}
+  .subtitle{font-size:14px;color:var(--gray-500);margin:0 0 18px}
+  .subtitle a{color:var(--teal-800);text-decoration:none;border-bottom:1px solid var(--teal-800)}
+  .subtitle a:hover{opacity:.85}
+
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:28px}
+
+  /* Forecast table card */
+  .card{background:var(--card);border:1px solid var(--ring);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:var(--teal-800);color:#fff;padding:10px;border:1px solid rgba(255,255,255,.18);text-align:center}
+  td,th{border:1px solid #dfe4ea;padding:9px;text-align:center}
+  td.section{text-align:left;background:#f2f6f8;font-weight:800}
+  tr.total td{background:#e8faf8;font-weight:800}
+  .footnote{margin-top:10px;font-size:12px;color:var(--gray-600)}
+  .footnote .highlight{color:var(--teal-800);font-weight:800}
+
+  /* Donut card (reuses CAC/LTV styles) */
+  .legend{display:grid;gap:14px;align-content:start}
+  .legend-item{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:12px}
+  .swatch{width:16px;height:16px;border-radius:4px;border:1px solid rgba(0,0,0,.06)}
+  .pill{min-width:110px;text-align:center;padding:6px 10px;border-radius:10px;background:#fff;border:1px solid var(--ring);font-weight:800;color:var(--gray-700)}
+  .label{font-weight:800;color:var(--gray-900)}
+  .muted{color:var(--gray-500);font-weight:600}
+  .value{font-weight:900;color:var(--teal-900)}
+
+  .donut-wrap{display:grid;place-items:center;position:relative}
+  .donut{width:380px;height:380px;border-radius:50%;box-shadow:inset 0 0 0 52px #fff,var(--shadow);position:relative;
+    background:conic-gradient(var(--teal-700) 0 358.99deg, var(--teal-400) 358.99deg 360deg);
+  }
+  .center{position:absolute;width:210px;height:210px;background:#fff;border-radius:50%;display:grid;place-items:center;text-align:center;box-shadow:inset 0 0 0 1px var(--ring)}
+  .center h2{margin:0;font-size:36px;color:var(--teal-900);font-weight:900}
+  .center p{margin:6px 0 0;color:var(--gray-500);font-weight:700}
+  .note{margin-top:12px;font-size:12px;color:var(--gray-600)}
+
+  @media (max-width:980px){.grid{grid-template-columns:1fr}.donut{width:320px;height:320px}.center{width:180px;height:180px}.center h2{font-size:32px}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">147:1 LTV:CAC — Efficient Now, Built to Scale</div>
+    <div class="subtitle">
+      <a href="finnixpro_cac_ltv_model.html" target="_blank" rel="noopener">Click to explore the live model with assumptions, inputs, and real‑time recalculations</a>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: Forecast Table -->
+      <section class="card">
+        <table aria-label="Financial Forecast Q4 2025 to Q4 2027">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Users</th>
+              <th>Free</th>
+              <th>Starter</th>
+              <th>Pro</th>
+              <th>Premium</th>
+              <th>Enterprise</th>
+              <th>Monthly Rev</th>
+              <th>Annual Rev</th>
+              <th>Burn</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Updated timeline reflecting GTM start late 2025 -->
+            <tr>
+              <td class="section">Q4 2025</td>
+              <td>1,200</td>
+              <td>700</td>
+              <td>120</td>
+              <td>140</td>
+              <td>90</td>
+              <td>20</td>
+              <td>$28.5K</td>
+              <td>$342K</td>
+              <td>$300K</td>
+            </tr>
+            <tr>
+              <td class="section">Q4 2026</td>
+              <td>6,000</td>
+              <td>2,500</td>
+              <td>700</td>
+              <td>1,400</td>
+              <td>900</td>
+              <td>500</td>
+              <td>$431K</td>
+              <td>$5.2M</td>
+              <td>$600K</td>
+            </tr>
+            <tr class="total">
+              <td class="section">Q4 2027</td>
+              <td>14,000</td>
+              <td>3,000</td>
+              <td>1,600</td>
+              <td>3,200</td>
+              <td>3,000</td>
+              <td>3,200</td>
+              <td>$2.15M</td>
+              <td>$25.8M</td>
+              <td>$900K</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="footnote">
+          Revenue based on blended pricing: <span class="highlight">Starter $10</span>, <span class="highlight">Pro $29</span>,
+          <span class="highlight">Premium $49 × 3 seats</span>, <span class="highlight">Enterprise ~$500</span>.
+          Q4‑2025 marks GTM start (pilot → paid). Expansion assumes strong retention and upsell into Premium/Enterprise.
+        </div>
+      </section>
+
+      <!-- RIGHT: Unit Economics Donut -->
+      <section class="card" aria-label="Unit Economics">
+        <div class="legend">
+          <div class="legend-item">
+            <div class="swatch" style="background: var(--teal-700)"></div>
+            <div class="label">Lifetime Value (LTV) <span class="muted">(gross profit / customer)</span></div>
+            <div class="pill"><span class="value">$12,525</span></div>
+          </div>
+          <div class="legend-item">
+            <div class="swatch" style="background: var(--teal-400)"></div>
+            <div class="label">Customer Acquisition Cost (CAC)</div>
+            <div class="pill"><span class="value">$105.26</span></div>
+          </div>
+          <div class="legend-item">
+            <div class="swatch" style="background: var(--teal-900)"></div>
+            <div class="label">LTV : CAC Ratio</div>
+            <div class="pill"><span class="value">119:1</span></div>
+          </div>
+          <div class="legend-item">
+            <div class="swatch" style="background: var(--teal-600)"></div>
+            <div class="label">ARPU (monthly)</div>
+            <div class="pill"><span class="value">$130.47</span></div>
+          </div>
+          <div class="legend-item">
+            <div class="swatch" style="background: var(--teal-600)"></div>
+            <div class="label">Total MRR (Year‑1 model)</div>
+            <div class="pill"><span class="value">$123,950</span></div>
+          </div>
+          <div class="legend-item">
+            <div class="swatch" style="background: var(--teal-600)"></div>
+            <div class="label">Gross Margin</div>
+            <div class="pill"><span class="value">80%</span></div>
+          </div>
+          <div class="legend-item">
+            <div class="swatch" style="background: var(--teal-600)"></div>
+            <div class="label">Annual Churn</div>
+            <div class="pill"><span class="value">10%</span></div>
+          </div>
+        </div>
+
+        <div class="donut-wrap" role="img" aria-label="LTV vs CAC donut">
+          <div class="donut"></div>
+          <div class="center">
+            <div>
+              <h2>119:1</h2>
+              <p>LTV : CAC</p>
+            </div>
+          </div>
+          <div class="note">CAC is ~0.8% of total lifetime value — a strong buffer for scaling spend.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
 
